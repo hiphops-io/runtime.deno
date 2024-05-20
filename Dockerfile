@@ -1,4 +1,4 @@
-FROM denoland/deno:1.43.4
+FROM denoland/deno:alpine-1.43.2
 
 EXPOSE 8080
 
@@ -12,7 +12,7 @@ USER deno
 # RUN deno cache deps.ts
 
 # These steps will be re-run upon each file change in your working directory:
-COPY ./src .
+COPY ./backend .
 
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 RUN deno cache mod.ts

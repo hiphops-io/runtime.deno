@@ -1,3 +1,4 @@
+import { loadWorkers } from "./load.ts";
 import { createNATSClient, closeNatsClient, handleWork } from "./nats.ts";
 import { serve } from "./server.ts";
 
@@ -9,9 +10,12 @@ import { serve } from "./server.ts";
 */
 const main = async () => {
   const natsClient = await createNATSClient("hops:4222");
+  const workerMap = await loadWorkers("/hiphops/flows/");
+  // const natsClient = await createNATSClient("localhost:4222");
+  // const workerMap = await loadWorkers("/Users/tm/Code/devex/flows/");
 
   await Promise.all([
-    handleWork(natsClient),
+    handleWork(natsClient, workerMap),
     serve(natsClient, { port: 8080, hostname: "0.0.0.0" }),
   ]);
 
