@@ -1,3 +1,1 @@
-export const helloWorld = () => {
-  console.log("Hello world!");
-};
+export * as hiphops from "./functions.ts";
