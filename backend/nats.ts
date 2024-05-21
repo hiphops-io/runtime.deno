@@ -115,10 +115,17 @@ const runWorker = (workerPath: string, data: unknown, subject: string) => {
 
   worker.postMessage({ data, subject });
 
-  // TODO:
-  // Wait for result
-  // worker.terminate()
-  //
-  // Good example of using workers with wrapping handle code:
-  // https://stackoverflow.com/a/71744944
+  const timeoutID = setTimeout(() => {
+    worker.terminate();
+  }, 1000 * 60 * 10);
+
+  worker.onerror = (err: ErrorEvent) => {
+    console.log("Worker error!:", err);
+    clearTimeout(timeoutID);
+  };
+
+  worker.onmessage = (result: unknown) => {
+    console.log("Received worker result:", result);
+    clearTimeout(timeoutID);
+  };
 };

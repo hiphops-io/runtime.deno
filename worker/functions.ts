@@ -4,6 +4,7 @@
 /**
  * TODO:
  * - Create type for inbound Hiphops event
+ * - Create type for Hiphops result
  */
 
 export type StepFunction = (e: unknown) => unknown;
@@ -35,7 +36,7 @@ const onWorkerMessage = async (e: unknown) => {
     self.postMessage({ completed: false, error: err.message, results: [] });
   }
 
-  stepFunctions = [];
+  self.close();
 };
 
 const sendResults = (promiseResults: PromiseSettledResult<unknown>[]) => {
