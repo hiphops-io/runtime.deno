@@ -56,6 +56,7 @@ export const consume = async (
 /** handleWork consumes messages from NATS and executes the appropriate user code */
 export const handleWork = async (client: NATSClient, workerMap: WorkerMap) => {
   const consumer = await getConsumer(client, "work", "work");
+
   await consume(consumer, async (m: nats.JsMsg) => {
     let workerTopic: string;
     let data: unknown;

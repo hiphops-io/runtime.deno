@@ -27,7 +27,10 @@ const executeAll = async (
   return await Promise.allSettled(calls);
 };
 
-const onWorkerMessage = async (e: unknown) => {
+const onInboundMessage = async (e: MessageEvent<unknown>) => {
+  console.log("--- event type", e.type);
+  console.log("--- event", JSON.stringify(e));
+
   const results = await executeAll(e);
 
   try {
@@ -60,5 +63,5 @@ if (
   typeof WorkerGlobalScope !== "undefined" &&
   self instanceof WorkerGlobalScope
 ) {
-  self.onmessage = onWorkerMessage;
+  self.onmessage = onInboundMessage;
 }

@@ -6,7 +6,7 @@ import { serve } from "./server.ts";
 - Add some error handling (at least better logging of them)
   All errors at this level are fatal and better handled by container runtime's healthcheck/retry loop
 - Add logging
-- Add config options for nats server address and listen port/address.
+- Add config options for nats server address and listen port/address such that it works when deployed.
 */
 const main = async () => {
   const natsClient = await createNATSClient("hops:4222");
