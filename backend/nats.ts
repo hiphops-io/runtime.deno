@@ -118,14 +118,14 @@ const runWorker = (workerPath: string, data: unknown, subject: string) => {
 
   const timeoutID = setTimeout(() => {
     worker.terminate();
-  }, 1000 * 60 * 10);
+  }, 1000 * 60 * 10); // 10 minute timeout
 
   worker.onerror = (err: ErrorEvent) => {
     console.log("Worker error!:", err);
     clearTimeout(timeoutID);
   };
 
-  worker.onmessage = (result: unknown) => {
+  worker.onmessage = (result: MessageEvent<unknown>) => {
     console.log("Received worker result:", result);
     clearTimeout(timeoutID);
   };
