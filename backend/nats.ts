@@ -1,4 +1,6 @@
 import * as nats from "https://deno.land/x/nats@v1.25.0/src/mod.ts";
+import type { RequestMessage } from "https://raw.githubusercontent.com/hiphops-io/denoapp/e5e87c445747669c468c86113bbd0e6e9c1743a2/worker/messages.ts";
+
 import { WorkerMap } from "./load.ts";
 
 export interface NATSClient {
