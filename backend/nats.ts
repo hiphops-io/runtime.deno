@@ -1,4 +1,5 @@
 import * as nats from "https://deno.land/x/nats@v1.25.0/src/mod.ts";
+import * as Comlink from "https://unpkg.com/comlink/dist/esm/comlink.mjs";
 import type { RequestMessage } from "https://raw.githubusercontent.com/hiphops-io/denoapp/e5e87c445747669c468c86113bbd0e6e9c1743a2/worker/messages.ts";
 
 import { WorkerMap } from "./load.ts";
@@ -64,6 +65,13 @@ export const handleWork = async (client: NATSClient, workerMap: WorkerMap) => {
     let data: unknown;
 
     console.log("Received message");
+    if (!m) {
+      console.log("A falsey message!");
+    } else if (!m.data) {
+      console.log("An empty message!");
+    } else if (!m.subject) {
+      console.log("A subjectless message!");
+    }
     // TODO: Need to find a way to extend message deadline whilst work is carried out
 
     try {
@@ -81,7 +89,7 @@ export const handleWork = async (client: NATSClient, workerMap: WorkerMap) => {
     }
 
     try {
-      runWorker(workerPath, data, m.subject);
+      await runWorker(workerPath, data, m.subject);
     } catch (err) {
       console.log(`failed to complete work: ${err}`);
       m.nak(1000 * 30); // Try again in 30 seconds
@@ -111,24 +119,42 @@ const decodeMessage = (msg: nats.JsMsg): { workerTopic: string; data: any } => {
   };
 };
 
-const runWorker = (workerPath: string, data: unknown, subject: string) => {
+const runWorker = async (
+  workerPath: string,
+  data: unknown,
+  subject: string
+) => {
   const worker = new Worker(import.meta.resolve(workerPath), {
     type: "module",
   });
 
-  worker.postMessage({ data, subject });
-
-  const timeoutID = setTimeout(() => {
-    worker.terminate();
-  }, 1000 * 60 * 10); // 10 minute timeout
-
-  worker.onerror = (err: ErrorEvent) => {
-    console.log("Worker error!:", err);
-    clearTimeout(timeoutID);
+  console.log("Wrapping worker");
+  const run = Comlink.wrap(worker);
+  const cb = (subject: string, payload: unknown) => {
+    console.log(
+      "--- Subject was:",
+      subject,
+      "Payload was:",
+      JSON.stringify(payload)
+    );
   };
+  console.log("Running worker");
+  await run({ data, subject }, Comlink.proxy(cb));
+  console.log("Posted message");
 
-  worker.onmessage = (result: MessageEvent<unknown>) => {
-    console.log("Received worker result:", result);
-    clearTimeout(timeoutID);
-  };
+  // worker.postMessage({ data, subject });
+
+  // const timeoutID = setTimeout(() => {
+  //   worker.terminate();
+  // }, 1000 * 60 * 10); // 10 minute timeout
+
+  // worker.onerror = (err: ErrorEvent) => {
+  //   console.log("Worker error!:", err);
+  //   clearTimeout(timeoutID);
+  // };
+
+  // worker.onmessage = (result: MessageEvent<unknown>) => {
+  //   console.log("Received worker result:", result);
+  //   clearTimeout(timeoutID);
+  // };
 };

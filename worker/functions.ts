@@ -2,6 +2,8 @@
 /// <reference lib="deno.worker" />
 
 import type { ResultItem, RequestMessage, ResultMessage } from "./messages.ts";
+import * as Comlink from "https://unpkg.com/comlink/dist/esm/comlink.mjs";
+// importScripts("https://unpkg.com/comlink/dist/umd/comlink.js");
 
 /**
  * TODO:
@@ -35,8 +37,6 @@ const executeAll = async (
 ): Promise<PromiseSettledResult<unknown>[]> => {
   const calls = [];
   for (const fn of stepFunctions) {
-    // TODO: We might want to deep copy e to prevent weird
-    // behaviour if they try to mutate. Could also just document the behaviour
     calls.push(fn(e));
   }
 
@@ -80,5 +80,15 @@ if (
   typeof WorkerGlobalScope !== "undefined" &&
   self instanceof WorkerGlobalScope
 ) {
-  self.onmessage = onInboundMessage;
+  // self.onmessage = onInboundMessage;
 }
+
+Comlink.expose(
+  (
+    message: { subject: string; data: unknown },
+    cb: (s: string, p: unknown) => void
+  ) => {
+    console.log("--- got message", JSON.stringify(message));
+    cb(message.subject, message.data);
+  }
+);
