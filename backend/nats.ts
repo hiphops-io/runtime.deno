@@ -1,8 +1,9 @@
 import * as nats from "https://deno.land/x/nats@v1.25.0/src/mod.ts";
-import * as Comlink from "https://unpkg.com/comlink/dist/esm/comlink.mjs";
-import type { RequestMessage } from "https://raw.githubusercontent.com/hiphops-io/denoapp/e5e87c445747669c468c86113bbd0e6e9c1743a2/worker/messages.ts";
+import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
 
 import { WorkerMap } from "./load.ts";
+
+type callServiceFunc = (subject: string, payload?: unknown) => Promise<unknown>;
 
 export interface NATSClient {
   nc: nats.NatsConnection;
@@ -65,13 +66,6 @@ export const handleWork = async (client: NATSClient, workerMap: WorkerMap) => {
     let data: unknown;
 
     console.log("Received message");
-    if (!m) {
-      console.log("A falsey message!");
-    } else if (!m.data) {
-      console.log("An empty message!");
-    } else if (!m.subject) {
-      console.log("A subjectless message!");
-    }
     // TODO: Need to find a way to extend message deadline whilst work is carried out
 
     try {
@@ -89,7 +83,7 @@ export const handleWork = async (client: NATSClient, workerMap: WorkerMap) => {
     }
 
     try {
-      await runWorker(workerPath, data, m.subject);
+      await runWorker(client, workerPath, data, m.subject);
     } catch (err) {
       console.log(`failed to complete work: ${err}`);
       m.nak(1000 * 30); // Try again in 30 seconds
@@ -120,6 +114,7 @@ const decodeMessage = (msg: nats.JsMsg): { workerTopic: string; data: any } => {
 };
 
 const runWorker = async (
+  client: NATSClient,
   workerPath: string,
   data: unknown,
   subject: string
@@ -128,33 +123,35 @@ const runWorker = async (
     type: "module",
   });
 
-  console.log("Wrapping worker");
+  const serviceCall = natsCaller(client);
   const run = Comlink.wrap(worker);
-  const cb = (subject: string, payload: unknown) => {
-    console.log(
-      "--- Subject was:",
-      subject,
-      "Payload was:",
-      JSON.stringify(payload)
-    );
+  await run({ data, subject }, Comlink.proxy(serviceCall));
+
+  const timeoutID = setTimeout(() => {
+    worker.terminate();
+  }, 1000 * 60 * 10); // 10 minute timeout
+
+  worker.onerror = (err: ErrorEvent) => {
+    console.log("Worker error!:", err);
+    clearTimeout(timeoutID);
   };
-  console.log("Running worker");
-  await run({ data, subject }, Comlink.proxy(cb));
-  console.log("Posted message");
 
-  // worker.postMessage({ data, subject });
+  worker.onmessage = (result: MessageEvent<unknown>) => {
+    console.log("Received worker result:", result);
+    clearTimeout(timeoutID);
+  };
+};
 
-  // const timeoutID = setTimeout(() => {
-  //   worker.terminate();
-  // }, 1000 * 60 * 10); // 10 minute timeout
+const natsCaller = (client: NATSClient): callServiceFunc => {
+  const codec = nats.JSONCodec();
 
-  // worker.onerror = (err: ErrorEvent) => {
-  //   console.log("Worker error!:", err);
-  //   clearTimeout(timeoutID);
-  // };
+  return async (subject: string, data?: unknown) => {
+    let payload: Uint8Array | undefined = undefined;
+    if (data) {
+      payload = codec.encode(data);
+    }
 
-  // worker.onmessage = (result: MessageEvent<unknown>) => {
-  //   console.log("Received worker result:", result);
-  //   clearTimeout(timeoutID);
-  // };
+    const msg = await client.nc.request(subject, payload);
+    return codec.decode(msg.data);
+  };
 };

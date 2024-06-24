@@ -1,9 +1,8 @@
 /// <reference no-default-lib="true" />
 /// <reference lib="deno.worker" />
 
-import type { ResultItem, RequestMessage, ResultMessage } from "./messages.ts";
-import * as Comlink from "https://unpkg.com/comlink/dist/esm/comlink.mjs";
-// importScripts("https://unpkg.com/comlink/dist/umd/comlink.js");
+import type { ResultItem, ResultMessage } from "./messages.ts";
+import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
 
 /**
  * TODO:
@@ -21,15 +20,13 @@ export const run = (fn: StepFunction) => {
   stepFunctions.push(fn);
 };
 
-export const call = (subject: string, payload?: unknown) => {
-  const request: RequestMessage = {
-    type: "request",
-    subject: subject,
-    payload: payload,
-    id: 0,
-  };
-  self.postMessage(request);
-  // TODO: Need to wait for and wire back the response
+let callHandler: (s: string, p?: unknown) => Promise<unknown>;
+
+export const call = async (
+  subject: string,
+  payload?: unknown
+): Promise<unknown> => {
+  return await callHandler(subject, payload);
 };
 
 const executeAll = async (
@@ -43,9 +40,9 @@ const executeAll = async (
   return await Promise.allSettled(calls);
 };
 
-const onInboundMessage = async (e: MessageEvent<unknown>) => {
+const onInboundMessage = async (msg: { subject: string; data: unknown }) => {
   // TODO: Unwrap the MessageEvent to extract the actual data/hops info etc
-  const results = await executeAll(e);
+  const results = await executeAll(msg);
   sendResults(results);
   self.close();
 };
@@ -76,19 +73,12 @@ const sendResults = (promiseResults: PromiseSettledResult<unknown>[]) => {
   self.postMessage(result);
 };
 
-if (
-  typeof WorkerGlobalScope !== "undefined" &&
-  self instanceof WorkerGlobalScope
-) {
-  // self.onmessage = onInboundMessage;
-}
-
 Comlink.expose(
   (
     message: { subject: string; data: unknown },
-    cb: (s: string, p: unknown) => void
+    request: (s: string, p?: unknown) => Promise<unknown>
   ) => {
-    console.log("--- got message", JSON.stringify(message));
-    cb(message.subject, message.data);
+    callHandler = request;
+    onInboundMessage(message);
   }
 );
