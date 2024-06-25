@@ -145,6 +145,8 @@ const runWorker = async (
 const natsCaller = (client: NATSClient): callServiceFunc => {
   const codec = nats.JSONCodec();
 
+  // TODO: Catch NATS 503 errors and make them friendlier to end users
+  // Ideally shouldn't just dump a stack trace, but should say "This is why" (no such connection)
   return async (subject: string, data?: unknown) => {
     let payload: Uint8Array | undefined = undefined;
     if (data) {
