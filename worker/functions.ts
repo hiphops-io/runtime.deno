@@ -1,18 +1,17 @@
 /// <reference no-default-lib="true" />
 /// <reference lib="deno.worker" />
 
-import type { ResultItem, ResultMessage } from "./messages.ts";
+import type {
+  ResultItem,
+  ResultMessage,
+  HiphopsMsg,
+  HiphopsMsgData,
+} from "./messages.ts";
 import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
 
-/**
- * TODO:
- * - Create type for inbound Hiphops event
- * - Create type for Hiphops result
- * - Create type for unwrapped event passed to step function
- */
+export type StepFunction = (e: HiphopsMsg) => unknown;
 
-export type StepFunction = (e: unknown) => unknown;
-
+// stepFunctions stores all the functions that users have scheduled with hiphops.run
 const stepFunctions: StepFunction[] = [];
 
 /** run queues a function for execution */
@@ -20,17 +19,8 @@ export const run = (fn: StepFunction) => {
   stepFunctions.push(fn);
 };
 
-let callHandler: (s: string, p?: unknown) => Promise<unknown>;
-
-export const call = async (
-  subject: string,
-  payload?: unknown
-): Promise<unknown> => {
-  return await callHandler(subject, payload);
-};
-
 const executeAll = async (
-  e: unknown
+  e: HiphopsMsg
 ): Promise<PromiseSettledResult<unknown>[]> => {
   const calls = [];
   for (const fn of stepFunctions) {
@@ -40,8 +30,7 @@ const executeAll = async (
   return await Promise.allSettled(calls);
 };
 
-const onInboundMessage = async (msg: { subject: string; data: unknown }) => {
-  // TODO: Unwrap the MessageEvent to extract the actual data/hops info etc
+const onInboundMessage = async (msg: HiphopsMsg) => {
   const results = await executeAll(msg);
   sendResults(results);
   self.close();
@@ -73,9 +62,21 @@ const sendResults = (promiseResults: PromiseSettledResult<unknown>[]) => {
   self.postMessage(result);
 };
 
+// callHandler is a function type expected to be provided by the worker parent to handle outbound requests
+let callHandler: (s: string, p?: unknown) => Promise<unknown>;
+
+// call is used by users e.g. hiphops.call("hiphops.someservice.dothing", "somepayload")
+// the requests are sent onto the worker parent and dispatched onwards
+export const call = async (
+  subject: string,
+  payload?: unknown
+): Promise<unknown> => {
+  return await callHandler(subject, payload);
+};
+
 Comlink.expose(
   (
-    message: { subject: string; data: unknown },
+    message: { subject: string; data: HiphopsMsgData },
     request: (s: string, p?: unknown) => Promise<unknown>
   ) => {
     callHandler = request;
