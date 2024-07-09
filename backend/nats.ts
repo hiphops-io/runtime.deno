@@ -122,6 +122,11 @@ const runWorker = async (
 ) => {
   const workerDir = path.dirname(workerPath);
   const workspaceDir = path.join("/workspaces", subject);
+  try {
+    Deno.mkdirSync(workspaceDir);
+  } catch (err) {
+    console.log("Parent failed to create workspace dir:", err);
+  }
 
   const worker = new Worker(import.meta.resolve(workerPath), {
     type: "module",
