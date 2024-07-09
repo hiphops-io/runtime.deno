@@ -5,6 +5,8 @@ import { workspace } from "./workspace.ts";
 
 /** github returns a pre-authenticated Octokit instance */
 export const github = async () => {
+  // TODO: This loses type information - Users no longer know this returns Octokit
+  // and therefore do not get intellisense support
   const octoImport = "https://esm.sh/octokit@4.0.2?dts"; // Prevents pre-download of dynamic imports
   const { Octokit } = await import(octoImport);
 
@@ -14,7 +16,9 @@ export const github = async () => {
 
 export const checkout = async (repo: string, branch: string, dst: string) => {
   const exacaImport = "npm:execa@9.3.0"; // Prevents pre-download of dynamic imports
-  const { execa } = await import(exacaImport);
+  const { execa } = await import(
+    `data:application/javascript,export * from "${exacaImport}";`
+  );
 
   const workspaceDir = workspace();
   const dstPath = path.join(workspaceDir, dst);
