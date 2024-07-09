@@ -1,7 +1,3 @@
-// import {
-//   Octokit,
-//   type Octokit as OctokitT,
-// } from "https://esm.sh/octokit@4.0.2?dts";
 import { call } from "./functions.ts";
 
 /** github returns a pre-authenticated Octokit instance */
