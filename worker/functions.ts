@@ -85,7 +85,7 @@ Comlink.expose(
     console.log("Setting call handler");
     callHandler = request;
     onInboundMessage(message);
-    WORKSPACE_DIR = context.workspaceDir;
-    WORKER_DIR = context.workerDir;
+    globalThis.WORKSPACE_DIR = context.workspaceDir;
+    globalThis.WORKER_DIR = context.workerDir;
   }
 );
