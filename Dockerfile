@@ -4,6 +4,8 @@ EXPOSE 8080
 
 WORKDIR /app
 
+RUN mkdir -p /workspaces/ && chown -R deno:deno /workspaces
+
 USER deno
 
 # Cache the dependencies as a layer (the following two steps are re-run only when deps.ts is modified).
