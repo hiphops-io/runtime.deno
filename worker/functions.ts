@@ -82,10 +82,10 @@ Comlink.expose(
     request: (s: string, p?: unknown) => Promise<unknown>,
     context: { workspaceDir: string; workerDir: string }
   ) => {
-    console.log("Setting call handler");
+    WORKSPACE_DIR = context.workspaceDir;
+    WORKER_DIR = context.workerDir;
+
     callHandler = request;
     onInboundMessage(message);
-    globalThis.WORKSPACE_DIR = context.workspaceDir;
-    globalThis.WORKER_DIR = context.workerDir;
   }
 );
