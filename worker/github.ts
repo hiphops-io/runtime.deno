@@ -13,7 +13,7 @@ export const github = async () => {
 };
 
 export const checkout = async (repo: string, branch: string, dst: string) => {
-  const exacaImport = "npm:execa"; // Prevents pre-download of dynamic imports
+  const exacaImport = "npm:execa@9.3.0"; // Prevents pre-download of dynamic imports
   const { execa } = await import(exacaImport);
 
   const workspaceDir = workspace();
