@@ -1,8 +1,6 @@
 export const workspace = () => {
   console.log("Creating workspace dir ", WORKSPACE_DIR);
 
-  console.log("Workspace root dir contents ", Deno.readDir("/workspaces"));
-
   console.log("Workspace dir contents ", Deno.readDir(WORKSPACE_DIR));
 
   // TODO: WORKSPACE_DIR shouldn't be a global var given we're doing JIT creation
