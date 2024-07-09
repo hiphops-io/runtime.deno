@@ -129,6 +129,7 @@ const runWorker = async (
       permissions: {
         net: "inherit",
         read: [workerDir, workspaceDir],
+        write: [workspaceDir],
       },
     },
   });
