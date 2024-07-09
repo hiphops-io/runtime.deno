@@ -62,7 +62,7 @@ const sendResults = (promiseResults: PromiseSettledResult<unknown>[]) => {
   self.postMessage(result);
 };
 
-// callHandler is a function type expected to be provided by the worker parent to handle outbound requests
+// callHandler is provided by the worker parent to handle outbound requests
 let callHandler: (s: string, p?: unknown) => Promise<unknown>;
 
 // call is used by users e.g. hiphops.call("hiphops.someservice.dothing", "somepayload")
