@@ -1,4 +1,5 @@
-/// <reference no-default-lib="true" />
+// This was removed as it was causing LSP issues for unstable features. If it causes issues, then replace
+// /// <reference no-default-lib="true" />
 /// <reference lib="deno.worker" />
 
 import type {

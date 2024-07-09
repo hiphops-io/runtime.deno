@@ -17,4 +17,6 @@ COPY ./backend .
 # Compile the main app so that it doesn't need to be compiled each startup/entry.
 RUN deno cache mod.ts
 
-CMD ["run", "--allow-all", "mod.ts"]
+VOLUME /workspaces/
+
+CMD ["run", "--allow-all", "--unstable-worker-options", "mod.ts"]

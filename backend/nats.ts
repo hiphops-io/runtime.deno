@@ -121,6 +121,11 @@ const runWorker = async (
 ) => {
   const worker = new Worker(import.meta.resolve(workerPath), {
     type: "module",
+    deno: {
+      permissions: {
+        read: ["/hiphops/flows/", "/workspaces/foobar"],
+      },
+    },
   });
 
   const serviceCall = natsCaller(client);
