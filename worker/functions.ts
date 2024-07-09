@@ -72,6 +72,7 @@ export const call = async (
   subject: string,
   payload?: unknown
 ): Promise<unknown> => {
+  console.log("Calling call handler:", subject);
   return await callHandler(subject, payload);
 };
 
@@ -80,6 +81,7 @@ Comlink.expose(
     message: { subject: string; data: HiphopsMsgData },
     request: (s: string, p?: unknown) => Promise<unknown>
   ) => {
+    console.log("Setting call handler");
     callHandler = request;
     onInboundMessage(message);
   }
