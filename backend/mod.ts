@@ -8,12 +8,11 @@ import { serve } from "./server.ts";
 - Add logging
 - Add config options for nats server address and listen port/address such that it works when deployed.
 */
+
 const main = async () => {
   console.log("Starting!");
   const natsClient = await createNATSClient("hops:4222");
   const workerMap = await loadWorkers("/hiphops/flows/");
-  // const natsClient = await createNATSClient("localhost:4222");
-  // const workerMap = await loadWorkers("/Users/tm/Code/devex/flows/");
 
   await Promise.all([
     handleWork(natsClient, workerMap),

@@ -1,3 +1,4 @@
+import * as path from "https://deno.land/std@0.102.0/path/mod.ts";
 import * as nats from "https://deno.land/x/nats@v1.25.0/src/mod.ts";
 import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
 
@@ -119,18 +120,25 @@ const runWorker = async (
   data: unknown,
   subject: string
 ) => {
+  const workerDir = path.dirname(workerPath);
+  const workspaceDir = "/workspaces/foobar";
+
   const worker = new Worker(import.meta.resolve(workerPath), {
     type: "module",
     deno: {
       permissions: {
-        read: ["/hiphops/flows/", "/workspaces/foobar"],
+        net: "inherit",
+        read: [workerDir, workspaceDir],
       },
     },
   });
 
   const serviceCall = natsCaller(client);
   const run = Comlink.wrap(worker);
-  await run({ data, subject }, Comlink.proxy(serviceCall));
+  await run({ data, subject }, Comlink.proxy(serviceCall), {
+    workspaceDir,
+    workerDir,
+  });
 
   const timeoutID = setTimeout(() => {
     worker.terminate();
