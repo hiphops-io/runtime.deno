@@ -121,7 +121,7 @@ const runWorker = async (
   subject: string
 ) => {
   const workerDir = path.dirname(workerPath);
-  const workspaceDir = "/workspaces/foobar";
+  const workspaceDir = path.join("/workspaces", subject);
 
   const worker = new Worker(import.meta.resolve(workerPath), {
     type: "module",
