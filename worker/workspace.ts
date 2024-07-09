@@ -7,7 +7,7 @@ export const workspace = () => {
     if (err! instanceof Deno.errors.AlreadyExists) {
       throw err;
     } else {
-      console.log("Dir already exists");
+      console.log("Dir already exists", err);
     }
   }
 
