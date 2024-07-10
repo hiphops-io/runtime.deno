@@ -1,4 +1,5 @@
-import * as path from "https://deno.land/std@0.102.0/path/mod.ts";
+import * as path from "jsr:@std/path";
+
 import * as nats from "https://deno.land/x/nats@v1.25.0/src/mod.ts";
 import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
 

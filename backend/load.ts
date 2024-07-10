@@ -1,4 +1,4 @@
-import * as path from "https://deno.land/std@0.102.0/path/mod.ts";
+import * as path from "jsr:@std/path";
 import { walk } from "jsr:@std/fs/walk";
 
 export interface WorkerMap {
