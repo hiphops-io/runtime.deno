@@ -14,10 +14,24 @@ export type StepFunction = (e: HiphopsMsg) => unknown;
 
 // stepFunctions stores all the functions that users have scheduled with hiphops.run
 const stepFunctions: StepFunction[] = [];
+// workspaceDir stores the path to the workspace folder this function has write access to
+let workspaceDir = "";
 
 /** run queues a function for execution */
 export const run = (fn: StepFunction) => {
   stepFunctions.push(fn);
+};
+
+export const workspace = () => {
+  try {
+    Deno.mkdirSync(workspaceDir);
+  } catch (err) {
+    if (!(err instanceof Deno.errors.AlreadyExists)) {
+      throw err;
+    }
+  }
+
+  return workspaceDir;
 };
 
 const executeAll = async (
@@ -33,11 +47,12 @@ const executeAll = async (
 
 const onInboundMessage = async (msg: HiphopsMsg) => {
   const results = await executeAll(msg);
-  sendResults(results);
-  self.close();
+  return prepareResults(results);
 };
 
-const sendResults = (promiseResults: PromiseSettledResult<unknown>[]) => {
+const prepareResults = (
+  promiseResults: PromiseSettledResult<unknown>[]
+): ResultMessage => {
   const result: ResultMessage = {
     type: "result",
     hasErrors: false,
@@ -60,7 +75,7 @@ const sendResults = (promiseResults: PromiseSettledResult<unknown>[]) => {
     result.results.push(resultItem);
   }
 
-  self.postMessage(result);
+  return result;
 };
 
 // callHandler is provided by the worker parent to handle outbound requests
@@ -81,10 +96,10 @@ Comlink.expose(
     request: (s: string, p?: unknown) => Promise<unknown>,
     context: { workspaceDir: string; codeDir: string }
   ) => {
-    WORKSPACE_DIR = context.workspaceDir;
+    workspaceDir = context.workspaceDir;
     CODE_DIR = context.codeDir;
 
     callHandler = request;
-    onInboundMessage(message);
+    return onInboundMessage(message);
   }
 );

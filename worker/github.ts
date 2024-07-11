@@ -1,8 +1,7 @@
 import * as path from "jsr:@std/path";
 import { Octokit } from "https://esm.sh/octokit@4.0.2?dts";
 
-import { call } from "./functions.ts";
-import { workspace } from "./workspace.ts";
+import { call, workspace } from "./functions.ts";
 import * as git from "./git.ts";
 
 /** client returns a pre-authenticated Octokit instance */
@@ -29,6 +28,4 @@ export const clone = async (repo: string, args?: CloneArgs) => {
   await git.clone({ dir, url, ...args });
 
   return dir;
-  // TODO: Check if we need to explicitly cache the repo credentials for a period
-  // https://stackoverflow.com/questions/35942754/how-can-i-save-username-and-password-in-git
 };

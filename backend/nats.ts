@@ -138,24 +138,32 @@ const runWorker = async (
 
   const serviceCall = natsCaller(client);
   const run = Comlink.wrap(worker);
-  await run({ data, subject }, Comlink.proxy(serviceCall), {
-    workspaceDir,
-    codeDir,
-  });
-
   const timeoutID = setTimeout(() => {
     worker.terminate();
   }, 1000 * 60 * 10); // 10 minute timeout
 
-  worker.onerror = (err: ErrorEvent) => {
-    console.log("Worker error!:", err);
+  try {
+    const result = await run({ data, subject }, Comlink.proxy(serviceCall), {
+      workspaceDir,
+      codeDir,
+    });
+    console.log("Worker run succeeded:", JSON.stringify(result));
+  } catch (err) {
+    console.log("Worker run failed:", err);
+  } finally {
     clearTimeout(timeoutID);
-  };
+    worker.terminate();
+  }
 
-  worker.onmessage = (result: MessageEvent<unknown>) => {
-    console.log("Received worker result:", result);
-    clearTimeout(timeoutID);
-  };
+  // worker.onerror = (err: ErrorEvent) => {
+  //   console.log("Worker error!:", err);
+  //   clearTimeout(timeoutID);
+  // };
+
+  // worker.onmessage = (result: MessageEvent<unknown>) => {
+  //   console.log("Received worker result:", result);
+  //   clearTimeout(timeoutID);
+  // };
 };
 
 const natsCaller = (client: NATSClient): callServiceFunc => {
