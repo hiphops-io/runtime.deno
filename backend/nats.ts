@@ -124,6 +124,7 @@ const runWorker = async (
   const codeDir = path.dirname(workerPath);
   const workspaceDir = path.join("/workspaces", subject);
 
+  // TODO: Handle errors such as bad import path
   const worker = new Worker(import.meta.resolve(workerPath), {
     type: "module",
     deno: {
