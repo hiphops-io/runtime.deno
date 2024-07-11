@@ -147,7 +147,8 @@ const runWorker = async (
       workspaceDir,
       codeDir,
     });
-    console.log("Worker run succeeded:", JSON.stringify(result));
+    // This could still be a failure/partial failure, depending on the result object
+    console.log("Worker run completed:", JSON.stringify(result));
   } catch (err) {
     console.log("Worker run failed:", err);
   } finally {

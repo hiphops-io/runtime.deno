@@ -68,6 +68,7 @@ const prepareResults = (
     if (r.status === "fulfilled") {
       resultItem.result = r.value;
     } else {
+      throw new Error(r.reason);
       result.hasErrors = true;
       resultItem.error = r.reason;
     }
