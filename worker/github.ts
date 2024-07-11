@@ -26,9 +26,9 @@ export const clone = async (repo: string, args?: CloneArgs) => {
   const token: string = (await call("hiphops.github.accesstoken")) as string;
   const url = `https://x-access-token:${token}@github.com/${repo}.git`;
 
-  return git.clone({ dir, url, ...args });
+  await git.clone({ dir, url, ...args });
+
+  return dir;
   // TODO: Check if we need to explicitly cache the repo credentials for a period
   // https://stackoverflow.com/questions/35942754/how-can-i-save-username-and-password-in-git
 };
-
-clone("foo/bar");
