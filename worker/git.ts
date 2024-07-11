@@ -108,7 +108,7 @@ export const _commitAllChanges = async (
     )
   );
 
-  await commit(args);
+  return commit(args);
 };
 // Add/remove as required and commit all changed files in a repo
 export const commitAllChanges = expandParamTypes(_commitAllChanges);
