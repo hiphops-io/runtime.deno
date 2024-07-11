@@ -121,7 +121,7 @@ const runWorker = async (
   data: unknown,
   subject: string
 ) => {
-  const workerDir = path.dirname(workerPath);
+  const codeDir = path.dirname(workerPath);
   const workspaceDir = path.join("/workspaces", subject);
 
   const worker = new Worker(import.meta.resolve(workerPath), {
@@ -130,7 +130,7 @@ const runWorker = async (
       permissions: {
         env: "inherit",
         net: "inherit",
-        read: [workerDir, workspaceDir],
+        read: [codeDir, workspaceDir],
         write: [workspaceDir],
       },
     },
@@ -140,7 +140,7 @@ const runWorker = async (
   const run = Comlink.wrap(worker);
   await run({ data, subject }, Comlink.proxy(serviceCall), {
     workspaceDir,
-    workerDir,
+    codeDir,
   });
 
   const timeoutID = setTimeout(() => {

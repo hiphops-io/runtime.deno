@@ -79,10 +79,10 @@ Comlink.expose(
   (
     message: { subject: string; data: HiphopsMsgData },
     request: (s: string, p?: unknown) => Promise<unknown>,
-    context: { workspaceDir: string; workerDir: string }
+    context: { workspaceDir: string; codeDir: string }
   ) => {
     WORKSPACE_DIR = context.workspaceDir;
-    WORKER_DIR = context.workerDir;
+    CODE_DIR = context.codeDir;
 
     callHandler = request;
     onInboundMessage(message);
