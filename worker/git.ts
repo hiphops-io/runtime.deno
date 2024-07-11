@@ -18,6 +18,19 @@ const wrappedIsoGit = <
   };
 };
 
+// Return a function with the properties in args expanded.
+//
+// This is purely to allow our wrapped helper functions to accept the same args
+// as what they wrap, but still show the proper object typings in intellisense.
+// There might be a better way to do this, I just didn't find it.
+const expandParamTypes = <A extends unknown, R>(
+  call: (a: A) => R
+): ((args: { [K in keyof A]: A[K] }) => R) => {
+  return (args) => {
+    return call({ ...args } as A);
+  };
+};
+
 export const add = wrappedIsoGit(git.add);
 export const addNote = wrappedIsoGit(git.addNote);
 export const addRemote = wrappedIsoGit(git.addRemote);
@@ -82,3 +95,20 @@ export const writeTree = wrappedIsoGit(git.writeTree);
 export const stage = git.STAGE;
 export const tree = git.TREE;
 export const workdir = git.WORKDIR;
+
+export const _commitAllChanges = async (
+  args: Parameters<typeof commit>[0] & { dir: string }
+) => {
+  const status = await statusMatrix({ dir: args.dir });
+  await Promise.all(
+    status.map(([filepath, , worktreeStatus]) =>
+      worktreeStatus
+        ? add({ dir: args.dir, filepath })
+        : remove({ dir: args.dir, filepath })
+    )
+  );
+
+  await commit(args);
+};
+// Add/remove as required and commit all changed files in a repo
+export const commitAllChanges = expandParamTypes(_commitAllChanges);
