@@ -6,11 +6,7 @@ export const workspace = () => {
     if (!(err instanceof Deno.errors.AlreadyExists)) {
       throw err;
     }
-
-    console.log("Already exists");
   }
-
-  console.log("Workspace dir ready:", WORKSPACE_DIR);
 
   return WORKSPACE_DIR;
 };

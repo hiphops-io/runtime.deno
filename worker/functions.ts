@@ -72,7 +72,6 @@ export const call = async (
   subject: string,
   payload?: unknown
 ): Promise<unknown> => {
-  console.log("Calling call handler:", subject);
   return await callHandler(subject, payload);
 };
 
