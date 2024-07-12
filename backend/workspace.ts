@@ -19,11 +19,10 @@ const deleteExpiredWorkspaces = async () => {
 
     const dirPath = path.join(config.workspacesDir, dirEntry.name);
     const dirInfo = Deno.statSync(dirPath);
-
     const now = new Date().getTime();
-    console.log("Current date/time is: ", now);
-    console.log("Dir modification date/time is: ", dirInfo.mtime);
+
     if (dirInfo.mtime === null) {
+      // TODO: Error log
       console.log("Unable to get workspace creation time!");
       continue;
     }
