@@ -209,6 +209,7 @@ export class HiphopsStore {
     this.store = client.os;
     this.stringCodec = StringCodec();
   }
+  // TODO: Object names need to be slugified/cleansed
 
   //** Get an object from the store, returns the contents or null if the object isn't found */
   async get(name: string): Promise<string | null> {
