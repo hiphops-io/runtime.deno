@@ -124,18 +124,25 @@ const runWorker = async (
   const codeDir = path.dirname(workerPath);
   const workspaceDir = path.join("/workspaces", subject);
 
-  // TODO: Handle errors such as bad import path
-  const worker = new Worker(import.meta.resolve(workerPath), {
-    type: "module",
-    deno: {
-      permissions: {
-        env: "inherit",
-        net: "inherit",
-        read: [codeDir, workspaceDir],
-        write: [workspaceDir],
+  let worker: Worker;
+  try {
+    worker = new Worker(import.meta.resolve(workerPath), {
+      type: "module",
+      deno: {
+        permissions: {
+          sys: ["hostname"],
+          hrtime: true,
+          env: "inherit",
+          net: "inherit",
+          read: [codeDir, workspaceDir],
+          write: [workspaceDir],
+        },
       },
-    },
-  });
+    });
+  } catch (err) {
+    console.log("Failed to start worker:", err);
+    return;
+  }
 
   const serviceCall = natsCaller(client);
   const run = Comlink.wrap(worker);
@@ -156,16 +163,6 @@ const runWorker = async (
     clearTimeout(timeoutID);
     worker.terminate();
   }
-
-  // worker.onerror = (err: ErrorEvent) => {
-  //   console.log("Worker error!:", err);
-  //   clearTimeout(timeoutID);
-  // };
-
-  // worker.onmessage = (result: MessageEvent<unknown>) => {
-  //   console.log("Received worker result:", result);
-  //   clearTimeout(timeoutID);
-  // };
 };
 
 const natsCaller = (client: NATSClient): callServiceFunc => {
