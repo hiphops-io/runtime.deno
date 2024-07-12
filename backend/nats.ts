@@ -160,7 +160,7 @@ const runWorker = async (
   }, 1000 * config.workerTimeout);
 
   try {
-    const result = await run({ data, subject }, serviceCallProxy, {
+    const result = await run({ data, subject }, serviceCallProxy, storeProxy, {
       workspaceDir,
       codeDir,
     });
@@ -170,8 +170,7 @@ const runWorker = async (
     console.log("Worker run failed:", err);
   } finally {
     clearTimeout(timeoutID);
-    serviceCallProxy[Comlink.releaseProxy]();
-    storeProxy[Comlink.releaseProxy]();
+    run[Comlink.releaseProxy]();
     worker.terminate();
   }
 };

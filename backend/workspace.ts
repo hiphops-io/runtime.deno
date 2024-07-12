@@ -31,7 +31,7 @@ const deleteExpiredWorkspaces = async () => {
     const delta = Math.abs(now - dirInfo.mtime.getTime());
 
     if (delta > 1000 * (config.workerTimeout + config.workerGracePeriod)) {
-      deletes.push(Deno.remove(dirPath));
+      deletes.push(Deno.remove(dirPath, { recursive: true }));
     }
   }
 
