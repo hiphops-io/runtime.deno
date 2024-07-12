@@ -1,7 +1,6 @@
-// This was removed as it was causing LSP issues for unstable features. If it causes issues, then replace
-// /// <reference no-default-lib="true" />
 /// <reference lib="deno.worker" />
 
+import { HiphopsStore } from "../backend/nats.ts";
 import type {
   ResultItem,
   ResultMessage,
@@ -90,16 +89,22 @@ export const call = async (
   return await callHandler(subject, payload);
 };
 
+export let store: HiphopsStore;
+
 Comlink.expose(
   (
     message: { subject: string; data: HiphopsMsgData },
     request: (s: string, p?: unknown) => Promise<unknown>,
+    objStore: HiphopsStore,
     context: { workspaceDir: string; codeDir: string }
   ) => {
-    workspaceDir = context.workspaceDir;
+    // Bootstrap the worker with all the functionality and settings from the parent
     CODE_DIR = context.codeDir;
-
+    workspaceDir = context.workspaceDir;
+    store = objStore;
     callHandler = request;
+
+    // Trigger the user's flows
     return onInboundMessage(message);
   }
 );

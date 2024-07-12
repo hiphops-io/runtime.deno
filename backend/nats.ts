@@ -4,12 +4,16 @@ import * as nats from "https://deno.land/x/nats@v1.25.0/src/mod.ts";
 import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
 
 import { WorkerMap } from "./load.ts";
+import { cleanup } from "./workspace.ts";
+import { config } from "./config.ts";
+import { StringCodec } from "https://deno.land/x/nats@v1.25.0/nats-base-client/codec.ts";
 
 type callServiceFunc = (subject: string, payload?: unknown) => Promise<unknown>;
 
 export interface NATSClient {
   nc: nats.NatsConnection;
   js: nats.JetStreamClient;
+  os: nats.ObjectStore;
 }
 
 export const closeNatsClient = async (client: NATSClient) => {
@@ -27,11 +31,12 @@ export const createNATSClient = async (
     reconnect: true,
     reconnectTimeWait: 1000,
     reconnectJitter: 1000,
-    maxReconnectAttempts: 5,
+    maxReconnectAttempts: 10,
   });
   const js = nc.jetstream();
+  const os = await js.views.os("default", { storage: nats.StorageType.File });
 
-  return { nc, js };
+  return { nc, js, os };
 };
 
 export const getConsumer = async (
@@ -68,7 +73,6 @@ export const handleWork = async (client: NATSClient, workerMap: WorkerMap) => {
     let data: unknown;
 
     console.log("Received message");
-    // TODO: Need to find a way to extend message deadline whilst work is carried out
 
     try {
       ({ workerTopic, data } = decodeMessage(m));
@@ -78,17 +82,21 @@ export const handleWork = async (client: NATSClient, workerMap: WorkerMap) => {
 
     // Get the path via the subject on workerMap
     // Trigger appropriate worker
-    // TODO: Test not existing worker
+    // TODO: Test non-existent worker
     const workerPath = workerMap[workerTopic];
     if (!workerPath) {
       return m.term("no matching worker found for message");
     }
+
+    m.working();
 
     try {
       await runWorker(client, workerPath, data, m.subject);
     } catch (err) {
       console.log(`failed to complete work: ${err}`);
       m.nak(1000 * 30); // Try again in 30 seconds
+    } finally {
+      await cleanup();
     }
 
     // TODO:
@@ -122,7 +130,7 @@ const runWorker = async (
   subject: string
 ) => {
   const codeDir = path.dirname(workerPath);
-  const workspaceDir = path.join("/workspaces", subject);
+  const workspaceDir = path.join(config.workspacesDir, subject);
 
   let worker: Worker;
   try {
@@ -144,14 +152,15 @@ const runWorker = async (
     return;
   }
 
-  const serviceCall = natsCaller(client);
+  const serviceCallProxy = Comlink.proxy(natsCaller(client));
+  const storeProxy = Comlink.proxy(new HiphopsStore(client));
   const run = Comlink.wrap(worker);
   const timeoutID = setTimeout(() => {
     worker.terminate();
-  }, 1000 * 60 * 10); // 10 minute timeout
+  }, 1000 * config.workerTimeout);
 
   try {
-    const result = await run({ data, subject }, Comlink.proxy(serviceCall), {
+    const result = await run({ data, subject }, serviceCallProxy, {
       workspaceDir,
       codeDir,
     });
@@ -161,6 +170,8 @@ const runWorker = async (
     console.log("Worker run failed:", err);
   } finally {
     clearTimeout(timeoutID);
+    serviceCallProxy[Comlink.releaseProxy]();
+    storeProxy[Comlink.releaseProxy]();
     worker.terminate();
   }
 };
@@ -180,3 +191,55 @@ const natsCaller = (client: NATSClient): callServiceFunc => {
     return codec.decode(msg.data);
   };
 };
+
+export type ObjectInfo = {
+  // The revision number for the entry
+  revision: number;
+  // A cryptographic checksum of the data as a whole
+  digest: string;
+  // The size in bytes of the object
+  size: number;
+};
+
+export class HiphopsStore {
+  private store: nats.ObjectStore;
+  private stringCodec: nats.Codec<string>;
+
+  constructor(client: NATSClient) {
+    this.store = client.os;
+    this.stringCodec = StringCodec();
+  }
+
+  //** Get an object from the store, returns the contents or null if the object isn't found */
+  async get(name: string): Promise<string | null> {
+    const content = await this.store.getBlob(name);
+    if (content == null) return null;
+
+    return this.stringCodec.decode(content);
+  }
+
+  /** Put an object in the store (create or overwrite) */
+  async put(
+    name: string,
+    value: string,
+    description?: string
+  ): Promise<ObjectInfo> {
+    const objInfo = await this.store.putBlob(
+      { name, description },
+      this.stringCodec.encode(value)
+    );
+
+    return {
+      revision: objInfo.revision,
+      digest: objInfo.digest,
+      size: objInfo.size,
+    };
+  }
+
+  /** Delete an object from the store. Returns true if the operation completed successfully */
+  async delete(name: string): Promise<boolean> {
+    const purgeResult = await this.store.delete(name);
+
+    return purgeResult.success;
+  }
+}
