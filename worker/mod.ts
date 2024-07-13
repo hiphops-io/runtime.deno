@@ -3,3 +3,4 @@ import "./globals.ts";
 
 export * as github from "./github.ts";
 export * as git from "./git.ts";
+export * as notify from "./notify.ts";
