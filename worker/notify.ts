@@ -2,11 +2,11 @@ import { call } from "./functions.ts";
 
 export type SendEmailRequest = {
   // Recipient email addresses
-  to: string[];
+  to: string[] | string;
   // CC recipient email addresses
-  cc?: string[];
+  cc?: string[] | string;
   // BCC recipient email addresses
-  bcc?: string[];
+  bcc?: string[] | string;
   // Email address for replies
   replyTo?: string;
   // Display name for sender (defaults to "Hiphops Notification")
@@ -37,5 +37,9 @@ export type EmailAttachment = {
  * Note: All recipients and/or domains must be allow-listed via support before sending
  */
 export const sendEmail = async (email: SendEmailRequest) => {
+  email.to = typeof email.to === "string" ? [email.to] : email.to;
+  email.cc = typeof email.cc === "string" ? [email.cc] : email.cc;
+  email.bcc = typeof email.bcc === "string" ? [email.bcc] : email.bcc;
+
   return await call("hiphops.notify.email", email);
 };
