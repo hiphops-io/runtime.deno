@@ -9,5 +9,7 @@ export const client = async () => {
   console.log("Getting slack API client");
   const c = SlackAPI(token);
   console.log("Returning client?");
-  return c;
+  const wC = { client: c };
+  console.log("Client wrapped:", JSON.stringify(wC));
+  return wC.client;
 };
