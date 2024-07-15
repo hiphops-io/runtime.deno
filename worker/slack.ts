@@ -13,5 +13,6 @@ export const client = async (channelId: string) => {
     text: "Hello from client",
     channel: channelId,
   });
-  return client;
+  console.log("Message sent, returning client");
+  return { client, msg: "hey" };
 };
