@@ -7,5 +7,7 @@ export const client = async () => {
   const token: string = (await call("hiphops.slack.accesstoken")) as string;
 
   console.log("Getting slack API client");
-  return SlackAPI(token);
+  const client = SlackAPI(token);
+  console.log("Got client", JSON.stringify(client));
+  return client;
 };
