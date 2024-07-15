@@ -8,5 +8,5 @@ export const client = async () => {
 
   console.log("Getting slack API client");
 
-  return SlackAPI(token);
+  return { c: SlackAPI(token) };
 };
