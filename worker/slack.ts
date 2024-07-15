@@ -5,12 +5,12 @@ import { call } from "./functions.ts";
 export const client = async () => {
   const token: string = (await call("hiphops.slack.accesstoken")) as string;
   console.log("Creating client");
-  const c = _client(token);
+  const c = await _client(token);
   console.log("Got client internally");
   return c;
 };
 
-export const _client = (token: string) => {
+export const _client = async (token: string) => {
   console.log("Internally getting client");
   return SlackAPI(token);
 };
