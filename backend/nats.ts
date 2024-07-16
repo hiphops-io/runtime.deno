@@ -156,7 +156,10 @@ const runWorker = async (
   const storeProxy = Comlink.proxy(new HiphopsStore(client));
   const run = Comlink.wrap(worker);
   const timeoutID = setTimeout(() => {
+    console.log("Timeout reached, cancelling worker");
+    run[Comlink.releaseProxy]();
     worker.terminate();
+    console.log("Worker cancelled");
   }, 1000 * config.workerTimeout);
 
   try {
@@ -169,9 +172,11 @@ const runWorker = async (
   } catch (err) {
     console.log("Worker run failed:", err);
   } finally {
+    console.log("Cleaning up worker");
     clearTimeout(timeoutID);
     run[Comlink.releaseProxy]();
     worker.terminate();
+    console.log("Terminated");
   }
 };
 
