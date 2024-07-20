@@ -2,11 +2,11 @@ import * as path from "jsr:@std/path";
 
 import * as nats from "https://deno.land/x/nats@v1.25.0/src/mod.ts";
 import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
+import { StringCodec } from "https://deno.land/x/nats@v1.25.0/nats-base-client/codec.ts";
 
 import { WorkerMap } from "./load.ts";
 import { cleanup } from "./workspace.ts";
 import { config } from "./config.ts";
-import { StringCodec } from "https://deno.land/x/nats@v1.25.0/nats-base-client/codec.ts";
 
 type callServiceFunc = (subject: string, payload?: unknown) => Promise<unknown>;
 
