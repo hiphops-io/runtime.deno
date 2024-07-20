@@ -21,7 +21,6 @@ concurrency:
 
 jobs:
   release-docker:
-    if: inputs.env == 'live'
     runs-on: ubuntu-latest
 
     steps:
@@ -45,7 +44,8 @@ jobs:
           path: /tmp/.buildx-cache
           key: $${{ runner.os }}-hops
 
-      - name: Build and push
+      - name: Build and push (live)
+        if: inputs.env == 'live'
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -53,6 +53,18 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: hiphops/runtime-deno:${{ inputs.ref }},hiphops/runtime-deno:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Build and push (alpha)
+        if: inputs.env == 'stage'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: hiphops/runtime-deno:alpha-${{ inputs.ref }},hiphops/runtime-deno:alpha
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
