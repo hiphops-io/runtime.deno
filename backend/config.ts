@@ -4,6 +4,7 @@ const env = new Env();
 
 export const config = {
   natsServers: env.get("NATS_SERVER_URLS", "hops:4222").split(","),
+  siteDir: env.get("SITE_DIR", "/hiphops/site"),
   workspacesDir: env.get("WORKSPACES_DIR", "/workspaces"),
   workerTimeout: Number(env.get("WORKER_TIMEOUT_SECONDS", "600")),
   workerGracePeriod: Number(env.get("WORKER_GRACE_PERIOD_SECONDS", "120")),
