@@ -7,6 +7,7 @@ import { StringCodec } from "https://deno.land/x/nats@v1.25.0/nats-base-client/c
 import { WorkerMap } from "./load.ts";
 import { cleanup } from "./workspace.ts";
 import { config } from "./config.ts";
+import type { Store, ObjectInfo } from "../run/store.ts";
 
 type callServiceFunc = (subject: string, payload?: unknown) => Promise<unknown>;
 
@@ -153,7 +154,7 @@ const runWorker = async (
   }
 
   const serviceCallProxy = Comlink.proxy(natsCaller(client));
-  const storeProxy = Comlink.proxy(new HiphopsStore(client));
+  const storeProxy = Comlink.proxy(hiphopsStore(client));
   const run = Comlink.wrap(worker);
   const timeoutID = setTimeout(() => {
     console.log("Timeout reached, cancelling worker");
@@ -196,42 +197,31 @@ const natsCaller = (client: NATSClient): callServiceFunc => {
   };
 };
 
-export type ObjectInfo = {
-  // The revision number for the entry
-  revision: number;
-  // A cryptographic checksum of the data as a whole
-  digest: string;
-  // The size in bytes of the object
-  size: number;
-};
+const hiphopsStore = (client: NATSClient): Store => {
+  // store = client.os;
+  const stringCodec = StringCodec();
 
-export class HiphopsStore {
-  private store: nats.ObjectStore;
-  private stringCodec: nats.Codec<string>;
+  const del = async (name: string): Promise<boolean> => {
+    const purgeResult = await client.os.delete(name);
 
-  constructor(client: NATSClient) {
-    this.store = client.os;
-    this.stringCodec = StringCodec();
-  }
-  // TODO: Object names need to be slugified/cleansed
+    return purgeResult.success;
+  };
 
-  //** Get an object from the store, returns the contents or null if the object isn't found */
-  async get(name: string): Promise<string | null> {
-    const content = await this.store.getBlob(name);
+  const get = async (name: string): Promise<string | null> => {
+    const content = await client.os.getBlob(name);
     if (content == null) return null;
 
-    return this.stringCodec.decode(content);
-  }
+    return stringCodec.decode(content);
+  };
 
-  /** Put an object in the store (create or overwrite) */
-  async put(
+  const put = async (
     name: string,
     value: string,
     description?: string
-  ): Promise<ObjectInfo> {
-    const objInfo = await this.store.putBlob(
+  ): Promise<ObjectInfo> => {
+    const objInfo = await client.os.putBlob(
       { name, description },
-      this.stringCodec.encode(value)
+      stringCodec.encode(value)
     );
 
     return {
@@ -239,12 +229,7 @@ export class HiphopsStore {
       digest: objInfo.digest,
       size: objInfo.size,
     };
-  }
+  };
 
-  /** Delete an object from the store. Returns true if the operation completed successfully */
-  async delete(name: string): Promise<boolean> {
-    const purgeResult = await this.store.delete(name);
-
-    return purgeResult.success;
-  }
-}
+  return { delete: del, get, put };
+};

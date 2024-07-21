@@ -1,13 +1,14 @@
 /// <reference lib="deno.worker" />
 
-import { HiphopsStore } from "../backend/nats.ts";
+import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
+
 import type {
   ResultItem,
   ResultMessage,
   HiphopsMsg,
   HiphopsMsgData,
 } from "./messages.ts";
-import * as Comlink from "https://unpkg.com/comlink@4.4.1/dist/esm/comlink.mjs";
+import type { Store } from "./store.ts";
 
 export type StepFunction = (e: HiphopsMsg) => unknown;
 
@@ -89,13 +90,13 @@ export const call = async (
   return await callHandler(subject, payload);
 };
 
-export let store: HiphopsStore;
+export let store: Store;
 
 Comlink.expose(
   (
     message: { subject: string; data: HiphopsMsgData },
     request: (s: string, p?: unknown) => Promise<unknown>,
-    objStore: HiphopsStore,
+    objStore: Store,
     context: { workspaceDir: string; codeDir: string }
   ) => {
     // Bootstrap the worker with all the functionality and settings from the parent
