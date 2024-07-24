@@ -7,12 +7,12 @@ export type JiraCredentials = {
   cloud_id: string;
 };
 
-export const credentials = async (): Promise<JiraCredentials> => {
+export const auth = async (): Promise<JiraCredentials> => {
   return (await call("hiphops.jira.accesstoken")) as JiraCredentials;
 };
 
 export const client = async (): Promise<KyInstance> => {
-  const { access_token, cloud_id } = await credentials();
+  const { access_token, cloud_id } = await auth();
 
   return ky.extend({
     prefixUrl: `https://api.atlassian.com/ex/jira/${cloud_id}/rest/api/3`,
