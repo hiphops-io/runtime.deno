@@ -4,7 +4,7 @@ import { Octokit } from "https://esm.sh/octokit@4.0.2?dts";
 import { call, workspace } from "./functions.ts";
 import * as git from "./git.ts";
 
-export const auth = async () => {
+export const auth = async (): Promise<string> => {
   return (await call("hiphops.github.accesstoken")) as string;
 };
 
